@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(rm:*)",
+      "Bash(npm start)",
+      "Bash(npx react-app-rewired:*)"
+    ],
+    "deny": []
+  }
+}
