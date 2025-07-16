@@ -20,7 +20,9 @@
       "Bash(wget:*)",
       "Bash(timeout:*)",
       "Bash(kill:*)",
-      "Bash(PORT=3000 npm start)"
+      "Bash(PORT=3000 npm start)",
+      "Bash(cp:*)",
+      "Bash(set PORT=3001)"
     ],
     "deny": []
   }

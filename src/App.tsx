@@ -8,6 +8,7 @@ import ImagePreview from './components/ui/ImagePreview';
 import ImageGallery from './components/ui/ImageGallery';
 import SettingsPanel from './components/ui/SettingsPanel';
 import { useImageProcessor } from './components/detection/ImageProcessor';
+import { initializeOCR } from './utils';
 
 declare var cv: any;
 
@@ -64,9 +65,19 @@ const App: React.FC = () => {
         
         // Check if OpenCV is loaded
         let attempts = 0;
-        const checkOpenCV = () => {
+        const checkOpenCV = async () => {
           if (typeof cv !== 'undefined' && cv.Mat) {
             console.log('OpenCV is ready');
+            
+            // Initialize OCR after OpenCV is ready
+            console.log('Initializing OCR...');
+            try {
+              await initializeOCR();
+              console.log('OCR initialized successfully');
+            } catch (error) {
+              console.warn('OCR initialization failed, continuing without OCR:', error);
+            }
+            
             setState(prev => ({ ...prev, modelsLoaded: true }));
           } else if (attempts < 50) {
             attempts++;

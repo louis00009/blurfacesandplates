@@ -46,3 +46,26 @@ export {
   performFinalValidation,
   combineAndFilterDetections as advancedCombineAndFilterDetections
 } from './helperFunctions';
+
+// OCR integration
+export {
+  initializeOCR,
+  terminateOCR,
+  enhanceDetectionsWithOCR,
+  isOCRReady
+} from './ocrIntegration';
+
+// Image preprocessing
+export {
+  preprocessImageForDetection,
+  adjustBrightnessContrast,
+  gammaCorrection,
+  autoWhiteBalance,
+  analyzeImageQuality
+} from './imagePreprocessing';
+
+// Noise filtering
+export {
+  preFilterNoiseRegions,
+  isLikelyNoise
+} from './noiseFiltering';

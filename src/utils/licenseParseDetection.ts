@@ -139,6 +139,15 @@ export async function performSimpleEffectiveDetection(
       if (isPlateAspectRatio && isReasonableSize && isMinimumDimensions && 
           isMaximumDimensions && isNotAtTop && isNotAtBottom) {
         
+        // Import noise filtering at runtime to avoid circular dependency
+        const { isLikelyNoise } = await import('./noiseFiltering');
+        
+        // Skip if detected as noise
+        if (isLikelyNoise(img, rect.x, rect.y, rect.width, rect.height)) {
+          contour.delete();
+          continue;
+        }
+        
         let confidence = 0.5; // Base confidence
         
         // Size score

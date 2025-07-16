@@ -110,12 +110,10 @@ export const useImageProcessor = ({
             console.log(`💪 Robust detection found ${plateRects.length} candidates`);
           }
           
-          // If no plates found by selected method, try fallback methods
+          // If no plates found by selected method, do NOT use fallback to avoid false positives
           if (plateRects.length === 0) {
-            console.log('⚠️ No plates found, trying fallback methods...');
-            const fallbackResults = await performMultipleFallbackMethods(img, canvas);
-            plateRects = fallbackResults;
-            console.log(`🔄 Fallback methods found ${plateRects.length} candidates`);
+            console.log('⚠️ No plates found by primary method. Skipping fallback to avoid false positives.');
+            // plateRects remains empty - better to miss a plate than create false positives
           }
           
         } catch (err) {

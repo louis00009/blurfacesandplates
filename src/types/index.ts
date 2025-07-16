@@ -10,6 +10,8 @@ export interface PlateDetection {
   angle?: number;
   textScore?: number;
   geometryScore?: number;
+  plateText?: string;
+  ocrConfidence?: number;
 }
 
 export interface DetectedRegion {

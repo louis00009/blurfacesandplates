@@ -6,8 +6,6 @@ import { performAustralianPlateDetection } from './australianPlateDetection';
 import { performSimpleEffectiveDetection, performColorBasedDetection } from './licenseParseDetection';
 import { performMultiScaleDetection } from './fallbackDetectionMethods';
 import { combineAndFilterDetections } from './helperFunctions';
-import { enhanceDetectionsWithOCR, initializeOCR, isOCRReady } from './ocrIntegration';
-import { preFilterNoiseRegions } from './noiseFiltering';
 
 declare var cv: any;
 
@@ -25,33 +23,29 @@ export async function performRobustMultiMethodDetection(
   let allDetections: PlateDetection[] = [];
   
   try {
-    // Method 1: Australian specialized detection (primary)
+    // Method 1: Simple effective detection
+    const simpleResults = await performSimpleEffectiveDetection(img, canvas);
+    allDetections = [...allDetections, ...simpleResults];
+    debugMode && console.log(`Simple method: ${simpleResults.length} detections`);
+    
+    // Method 2: Australian specialized detection
     const australianResults = await performAustralianPlateDetection(img, canvas, []); // No ground truth for robust
     allDetections = [...allDetections, ...australianResults];
     debugMode && console.log(`Australian method: ${australianResults.length} detections`);
     
-    // Method 2: Simple effective detection (backup only if Australian finds nothing)
-    if (australianResults.length === 0) {
-      const simpleResults = await performSimpleEffectiveDetection(img, canvas);
-      allDetections = [...allDetections, ...simpleResults];
-      debugMode && console.log(`Simple method: ${simpleResults.length} detections`);
-    }
+    // Method 3: Multi-scale detection
+    const multiscaleResults = await performMultiScaleDetection(img, canvas);
+    allDetections = [...allDetections, ...multiscaleResults];
+    debugMode && console.log(`Multi-scale method: ${multiscaleResults.length} detections`);
     
-    // Apply noise filtering before combining
-    const noiseFilteredDetections = preFilterNoiseRegions(img, allDetections);
-    debugMode && console.log(`Noise filtering: ${allDetections.length} → ${noiseFilteredDetections.length} detections`);
+    // Method 4: Color-based detection
+    const colorResults = await performColorBasedDetection(img, canvas);
+    allDetections = [...allDetections, ...colorResults];
+    debugMode && console.log(`Color-based method: ${colorResults.length} detections`);
     
     // Combine and filter results
-    const combinedResults = combineAndFilterDetections(noiseFilteredDetections, debugMode);
-    debugMode && console.log(`Combined and filtered: ${combinedResults.length} detections before OCR`);
-    
-    // Enhance with OCR if available
-    if (isOCRReady() && combinedResults.length > 0) {
-      debugMode && console.log('🔤 Enhancing detections with OCR...');
-      const ocrEnhancedResults = await enhanceDetectionsWithOCR(img, combinedResults);
-      debugMode && console.log(`OCR enhanced: ${ocrEnhancedResults.length} final detections`);
-      return ocrEnhancedResults;
-    }
+    const combinedResults = combineAndFilterDetections(allDetections, debugMode);
+    debugMode && console.log(`Combined and filtered: ${combinedResults.length} final detections`);
     
     return combinedResults;
     
