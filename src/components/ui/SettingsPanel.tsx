@@ -30,11 +30,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   imagesCount
 }) => {
   const detectionMethods = [
-    {key: 'robust', label: '💪 Robust', desc: 'Multi-method combination'},
-    {key: 'simple', label: '🎯 Simple', desc: 'Fast & effective'},
-    {key: 'aggressive', label: '🔥 Aggressive', desc: 'Loose criteria for difficult images'},
-    {key: 'australian', label: '🇦🇺 Australian', desc: 'Optimized for AU plates'},
-    {key: 'plateRecognizer', label: '📸 AI Service', desc: 'Professional API'}
+    {key: 'smartAPI', label: '🤖 SMART API', desc: 'Intelligent API management (RECOMMENDED)'},
+    {key: 'plateRecognizer', label: '📸 Plate Recognizer', desc: 'Professional API (MOST ACCURATE)'},
+    {key: 'openalpr', label: '🔓 OpenALPR', desc: 'Free 1000/month'},
+    {key: 'googleVision', label: '🔍 Google Vision', desc: 'Free 1000/month'},
+    {key: 'azure', label: '🔷 Azure Vision', desc: 'Free 5000/month'},
+    {key: 'aws', label: '🟠 AWS Rekognition', desc: 'Free 5000/month'},
+    {key: 'deepLearning', label: '🤖 DEEP LEARNING', desc: 'YOLOv8n + OCR (Local)'},
+    {key: 'robust', label: '🧠 INTELLIGENT', desc: '5-method combined (Local)'},
+    {key: 'simple', label: '🎯 Simple', desc: 'Fast & effective (Local)'},
+    {key: 'aggressive', label: '🔥 Aggressive', desc: 'Loose criteria (Local)'},
+    {key: 'australian', label: '🇦🇺 Australian', desc: 'Optimized for AU plates (Local)'}
   ];
 
   return (
@@ -186,7 +192,28 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         ))}
       </Stack>
 
-      {/* Plate Recognizer API Key */}
+      {/* Smart API Management Button */}
+      {settings.detectionMethod === 'smartAPI' && (
+        <Box sx={{ mt: 2 }}>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => {
+              // This will be handled by the parent component
+              const event = new CustomEvent('openAPIManager');
+              window.dispatchEvent(event);
+            }}
+            sx={{ mb: 1 }}
+          >
+            🔧 Open API Management Center
+          </Button>
+          <Typography variant="body2" color="text.secondary">
+            Configure multiple APIs, set priorities, monitor usage, and enable automatic fallback.
+          </Typography>
+        </Box>
+      )}
+
+      {/* API Key Inputs */}
       {settings.detectionMethod === 'plateRecognizer' && (
         <Box sx={{ mt: 2 }}>
           <Typography gutterBottom>Plate Recognizer API Key:</Typography>
@@ -196,8 +223,41 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             type="password"
             value={settings.plateRecognizerApiKey}
             onChange={(e) => onSettingsChange({ plateRecognizerApiKey: e.target.value })}
-            placeholder="Enter your API key"
+            placeholder="Enter your Plate Recognizer API key"
             variant="outlined"
+            helperText="Get free API key at platerecognizer.com (1000 calls/month)"
+          />
+        </Box>
+      )}
+
+      {settings.detectionMethod === 'openalpr' && (
+        <Box sx={{ mt: 2 }}>
+          <Typography gutterBottom>OpenALPR API Key:</Typography>
+          <TextField
+            fullWidth
+            size="small"
+            type="password"
+            value={settings.openalprApiKey}
+            onChange={(e) => onSettingsChange({ openalprApiKey: e.target.value })}
+            placeholder="Enter your OpenALPR API key"
+            variant="outlined"
+            helperText="Get free API key at openalpr.com (1000 calls/month)"
+          />
+        </Box>
+      )}
+
+      {settings.detectionMethod === 'googleVision' && (
+        <Box sx={{ mt: 2 }}>
+          <Typography gutterBottom>Google Cloud Vision API Key:</Typography>
+          <TextField
+            fullWidth
+            size="small"
+            type="password"
+            value={settings.googleVisionApiKey}
+            onChange={(e) => onSettingsChange({ googleVisionApiKey: e.target.value })}
+            placeholder="Enter your Google Cloud Vision API key"
+            variant="outlined"
+            helperText="Get free API key at cloud.google.com/vision (1000 calls/month)"
           />
         </Box>
       )}

@@ -7,6 +7,7 @@ import { ProcessedImage, ProcessingSettings, Annotation, AppState } from './type
 import ImagePreview from './components/ui/ImagePreview';
 import ImageGallery from './components/ui/ImageGallery';
 import SettingsPanel from './components/ui/SettingsPanel';
+import APIManagerPage from './components/admin/APIManagerPage';
 import { useImageProcessor } from './components/detection/ImageProcessor';
 import { initializeOCR } from './utils';
 
@@ -36,10 +37,28 @@ const App: React.FC = () => {
     highlightMode: false,
     highlightColor: '#FF0000',
     plateOpacity: 0.8,
-    detectionMethod: 'robust',
+    detectionMethod: 'smartAPI', // Default to smart API management
     plateRecognizerApiKey: '',
-    debugMode: false
+    openalprApiKey: '',
+    googleVisionApiKey: '',
+    debugMode: false,
+    useApiManager: true
   });
+
+  // API Manager page state
+  const [showAPIManager, setShowAPIManager] = useState(false);
+
+  // Listen for API Manager open event
+  useEffect(() => {
+    const handleOpenAPIManager = () => {
+      setShowAPIManager(true);
+    };
+
+    window.addEventListener('openAPIManager', handleOpenAPIManager);
+    return () => {
+      window.removeEventListener('openAPIManager', handleOpenAPIManager);
+    };
+  }, []);
 
   // Initialize face detection models
   useEffect(() => {
@@ -265,6 +284,11 @@ const App: React.FC = () => {
   const updateSettings = (newSettings: Partial<ProcessingSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   };
+
+  // Show API Manager page if requested
+  if (showAPIManager) {
+    return <APIManagerPage onClose={() => setShowAPIManager(false)} />;
+  }
 
   return (
     <Container maxWidth="lg" style={{ padding: '20px' }}>

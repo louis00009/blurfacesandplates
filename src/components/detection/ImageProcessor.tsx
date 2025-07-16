@@ -9,8 +9,14 @@ import {
   performSimpleEffectiveDetection,
   performAggressiveDetection,
   performPlateRecognizerDetection,
+  performOpenALPRDetection,
+  performGoogleVisionDetection,
   performMultipleFallbackMethods
 } from '../../utils/licenseParseDetection';
+import { performIntelligentPlateDetection } from '../../utils/intelligentPlateDetection';
+import { performPrecisionPlateDetection } from '../../utils/precisionPlateDetection';
+import { performDeepLearningDetection } from '../../utils/deepLearningDetection';
+import { performSmartAPIDetection } from '../../utils/smartAPIDetection';
 
 declare var cv: any;
 
@@ -91,7 +97,52 @@ export const useImageProcessor = ({
           console.log(`Starting license plate detection for ${image.fileName}...`);
           
           // Choose detection method based on settings
-          if (settings.detectionMethod === 'aggressive') {
+          console.log(`🎯 Using detection method: ${settings.detectionMethod}`);
+          
+          if (settings.detectionMethod === 'smartAPI') {
+            // SMART API MANAGEMENT - Intelligent API selection and fallback
+            console.log('🤖 Using SMART API MANAGEMENT - Intelligent API selection...');
+            plateRects = await performSmartAPIDetection(img, canvas);
+            console.log(`🤖 SMART API detection found ${plateRects.length} candidates`);
+          } else if (settings.detectionMethod === 'deepLearning') {
+            // REAL DEEP LEARNING detection method (YOLOv8n + OCR) - BEST ACCURACY!
+            console.log('🤖 Using REAL DEEP LEARNING detection method - YOLOv8n + Tesseract OCR...');
+            plateRects = await performDeepLearningDetection(img, canvas);
+            console.log(`🤖 DEEP LEARNING detection found ${plateRects.length} candidates`);
+            
+            // If deep learning method fails, try intelligent as backup
+            if (plateRects.length === 0) {
+              console.log('🔄 Deep learning method found nothing, trying intelligent backup...');
+              plateRects = await performIntelligentPlateDetection(img, canvas);
+              console.log(`🧠 Intelligent backup found ${plateRects.length} candidates`);
+              
+              // If intelligent also fails, try simple as last resort
+              if (plateRects.length === 0) {
+                console.log('🔄 Intelligent backup failed, trying simple as last resort...');
+                plateRects = await performSimpleEffectiveDetection(img, canvas);
+                console.log(`🎯 Simple last resort found ${plateRects.length} candidates`);
+              }
+            }
+          } else if (settings.detectionMethod === 'robust') {
+            // NEW INTELLIGENT detection method (5 methods combined) - FAST!
+            console.log('🧠 Using NEW INTELLIGENT detection method - 5 methods combined...');
+            plateRects = await performIntelligentPlateDetection(img, canvas);
+            console.log(`🧠 INTELLIGENT detection found ${plateRects.length} candidates`);
+            
+            // If intelligent method fails, try precision as backup
+            if (plateRects.length === 0) {
+              console.log('🔄 Intelligent method found nothing, trying precision backup...');
+              plateRects = await performPrecisionPlateDetection(img, canvas);
+              console.log(`🎯 Precision backup found ${plateRects.length} candidates`);
+              
+              // If precision also fails, try simple as last resort
+              if (plateRects.length === 0) {
+                console.log('🔄 Precision backup failed, trying simple as last resort...');
+                plateRects = await performSimpleEffectiveDetection(img, canvas);
+                console.log(`🎯 Simple last resort found ${plateRects.length} candidates`);
+              }
+            }
+          } else if (settings.detectionMethod === 'aggressive') {
             plateRects = await performAggressiveDetection(img, canvas);
             console.log(`🔥 Aggressive detection found ${plateRects.length} candidates`);
           } else if (settings.detectionMethod === 'simple') {
@@ -100,20 +151,45 @@ export const useImageProcessor = ({
           } else if (settings.detectionMethod === 'plateRecognizer') {
             plateRects = await performPlateRecognizerDetection(img, settings.plateRecognizerApiKey);
             console.log(`📸 Plate Recognizer found ${plateRects.length} candidates`);
+          } else if (settings.detectionMethod === 'openalpr') {
+            console.log('🔓 Using OpenALPR API detection...');
+            plateRects = await performOpenALPRDetection(img, settings.openalprApiKey);
+            console.log(`🔓 OpenALPR API found ${plateRects.length} candidates`);
+          } else if (settings.detectionMethod === 'googleVision') {
+            console.log('🔍 Using Google Cloud Vision API detection...');
+            plateRects = await performGoogleVisionDetection(img, settings.googleVisionApiKey);
+            console.log(`🔍 Google Vision API found ${plateRects.length} candidates`);
           } else if (settings.detectionMethod === 'australian') {
             const relevantAnnotations = annotations.filter(ann => image.fileName.includes(ann.filename.split('.')[0]));
             plateRects = await performAustralianPlateDetection(img, canvas, relevantAnnotations);
-            console.log(`🇦🇺 Australian detection found ${plateRects.length} candidates`);
+            console.log(`🇦🇺 IMPROVED Australian detection found ${plateRects.length} candidates`);
           } else {
-            // Default: robust detection
-            plateRects = await performRobustMultiMethodDetection(img, canvas);
-            console.log(`💪 Robust detection found ${plateRects.length} candidates`);
+            // Fallback to simple detection
+            console.log('🎯 Using fallback simple detection...');
+            plateRects = await performSimpleEffectiveDetection(img, canvas);
+            console.log(`🎯 Fallback simple detection found ${plateRects.length} candidates`);
           }
           
-          // If no plates found by selected method, do NOT use fallback to avoid false positives
+          // Log detection results for debugging
+          if (plateRects.length > 0) {
+            console.log('🎉 DETECTION SUCCESS! Found plates:');
+            plateRects.forEach((plate, index) => {
+              console.log(`  Plate ${index + 1}: [${plate.x}, ${plate.y}, ${plate.width}, ${plate.height}] confidence: ${(plate.confidence * 100).toFixed(1)}%`);
+            });
+          } else {
+            console.log('⚠️ No license plates detected - this may indicate the algorithm needs further tuning');
+          }
+          
+          // If no plates found by primary method, try one fallback method
           if (plateRects.length === 0) {
-            console.log('⚠️ No plates found by primary method. Skipping fallback to avoid false positives.');
-            // plateRects remains empty - better to miss a plate than create false positives
+            console.log('🔄 No plates found by primary method. Trying one fallback method...');
+            try {
+              // Use simple effective detection as fallback
+              plateRects = await performSimpleEffectiveDetection(img, canvas);
+              console.log(`🆘 Fallback detection found ${plateRects.length} candidates`);
+            } catch (fallbackError) {
+              console.warn('Fallback detection also failed:', fallbackError);
+            }
           }
           
         } catch (err) {

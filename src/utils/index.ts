@@ -26,10 +26,10 @@ export {
   performTextureAnalysis,
   detectTextPresence,
   performGradientAnalysis,
-  analyzeGradientStrength,
   performIntelligentFusion,
-  groupOverlappingCandidates as groupAustralianCandidates,
-  fuseMultipleCandidates as fuseAustralianCandidates
+  performPracticalEdgeDetection,
+  performSmartValidation,
+  performFallbackDetection
 } from './australianPlateDetection';
 
 // Fallback detection methods
@@ -58,9 +58,6 @@ export {
 // Image preprocessing
 export {
   preprocessImageForDetection,
-  adjustBrightnessContrast,
-  gammaCorrection,
-  autoWhiteBalance,
   analyzeImageQuality
 } from './imagePreprocessing';
 
