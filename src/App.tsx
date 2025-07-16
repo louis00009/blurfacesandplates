@@ -81,7 +81,11 @@ const App: React.FC = () => {
       } catch (error) {
         console.error('Failed to load models:', error);
         console.error('Error details:', error);
-        setState(prev => ({ ...prev, error: `Failed to load AI models: ${error.message}` }));
+        let errorMessage = 'An unknown error occurred while loading AI models.';
+        if (error instanceof Error) {
+          errorMessage = `Failed to load AI models: ${error.message}`;
+        }
+        setState(prev => ({ ...prev, error: errorMessage }));
       }
     };
 
