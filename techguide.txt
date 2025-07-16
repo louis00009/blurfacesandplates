@@ -15,39 +15,80 @@ This project is a React-based web application designed to apply mosaic and blur 
 ## 3. File Structure
 ```
 mosaic-blur-app/
+├── .claude/
+│   └── settings.local.json
 ├── .env
 ├── .gitignore
+├── analysreport.txt
+├── bugfix.txt
+├── carsales.html
 ├── config-overrides.js
+├── dataset/
+│   └── images/
+│       ├── plate.jpg
+│       ├── plate3.jpg
+│       ├── plate4.jpg
+│       ├── plate5.jpg
+│       ├── plate6.jpg
+│       ├── plate7.jpg
+│       ├── plateback.jpg
+│       ├── platebackangle.jpg
+│       ├── via_project_15Jul2025_12h59m_coco.json
+│       └── via_project_15Jul2025_12h59m.json
+├── extract_annotations.py
+├── extract_urls.py
 ├── package-lock.json
 ├── package.json
-├── README.md
-├── tsconfig.json
-├── techguide.txt (This file)
+├── PROJECT_STRUCTURE.md
 ├── public/
-│   ├── ...
-│   └── models/
-│       ├── haarcascade_russian_plate_number.xml
-│       ├── ssd_mobilenetv1_model-shard1
-│       ├── ssd_mobilenetv1_model-shard2
-│       ├── ssd_mobilenetv1_model-weights_manifest.json
-│       └── tiny_face_detector_model-weights_manifest.json
+│   ├── favicon.ico
+│   ├── index.html
+│   ├── logo192.png
+│   ├── logo512.png
+│   ├── manifest.json
+│   ├── models/
+│   │   ├── face_landmark_68_model-shard1
+│   │   ├── face_landmark_68_model-weights_manifest.json
+│   │   ├── face_recognition_model-shard1
+│   │   ├── face_recognition_model-shard2
+│   │   ├── face_recognition_model-weights_manifest.json
+│   │   ├── haarcascade_russian_plate_number.xml
+│   │   ├── ssd_mobilenetv1_model-shard1
+│   │   ├── ssd_mobilenetv1_model-shard2
+│   │   ├── ssd_mobilenetv1_model-weights_manifest.json
+│   │   └── tiny_face_detector_model-weights_manifest.json
+│   └── robots.txt
+├── README.md
 ├── src/
 │   ├── App.css
+│   ├── App.old.tsx
 │   ├── App.test.tsx
 │   ├── App.tsx
+│   ├── components/
+│   │   ├── detection/
+│   │   │   └── ImageProcessor.tsx
+│   │   └── ui/
+│   │       ├── ImageGallery.tsx
+│   │       ├── ImagePreview.tsx
+│   │       └── SettingsPanel.tsx
 │   ├── index.css
 │   ├── index.tsx
 │   ├── logo.svg
 │   ├── opencv.d.ts
 │   ├── react-app-env.d.ts
-│   └── setupTests.ts
-└── dataset/
-    └── images/
-        ├── car1.jpg
-        ├── car2.jpg
-        ├── car3.jpg
-        ├── via_project_15Jul2025_12h59m_coco.json
-        └── via_project_15Jul2025_12h59m.json
+│   ├── reportWebVitals.ts
+│   ├── setupTests.ts
+│   ├── types/
+│   │   └── index.ts
+│   └── utils/
+│       ├── australianPlateDetection.ts
+│       ├── fallbackDetectionMethods.ts
+│       ├── helperFunctions.ts
+│       ├── index.ts
+│       ├── licenseParseDetection.ts
+│       └── robustDetection.ts
+├── techguide.txt
+└── tsconfig.json
 ```
 
 ## 4. Key Components (`src/App.tsx`)
