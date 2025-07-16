@@ -6,7 +6,21 @@
       "Bash(npm install:*)",
       "Bash(rm:*)",
       "Bash(npm start)",
-      "Bash(npx react-app-rewired:*)"
+      "Bash(npx react-app-rewired:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:watermarkly.com)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(timeout 30s npm start)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(wget:*)",
+      "Bash(timeout:*)",
+      "Bash(kill:*)",
+      "Bash(PORT=3000 npm start)"
     ],
     "deny": []
   }

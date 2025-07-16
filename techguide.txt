@@ -1,0 +1,190 @@
+# Project Technical Guide: Mosaic Blur App
+
+## 1. Project Overview
+This project is a React-based web application designed to apply mosaic and blur effects to images, primarily focusing on privacy protection by detecting and obscuring faces and license plates. It leverages OpenCV.js for image processing and face-api.js for face detection. A key feature is the advanced license plate detection pipeline, which combines multiple OpenCV.js techniques and can be optionally augmented with a cloud-based Plate Recognizer API for enhanced accuracy on Australian license plates.
+
+## 2. Core Technologies
+*   **React:** Frontend JavaScript library for building user interfaces.
+*   **Material-UI (MUI):** React UI framework for styling and components.
+*   **TypeScript:** Superset of JavaScript that adds static types.
+*   **OpenCV.js:** JavaScript port of the OpenCV library for real-time computer vision.
+*   **face-api.js:** JavaScript API for face detection and face recognition in the browser, built on TensorFlow.js.
+*   **react-app-rewired:** Allows customization of Create React App webpack configurations.
+*   **Plate Recognizer API (Optional):** A cloud-based service for highly accurate license plate recognition.
+
+## 3. File Structure
+```
+mosaic-blur-app/
+├── .env
+├── .gitignore
+├── config-overrides.js
+├── package-lock.json
+├── package.json
+├── README.md
+├── tsconfig.json
+├── techguide.txt (This file)
+├── public/
+│   ├── ...
+│   └── models/
+│       ├── haarcascade_russian_plate_number.xml
+│       ├── ssd_mobilenetv1_model-shard1
+│       ├── ssd_mobilenetv1_model-shard2
+│       ├── ssd_mobilenetv1_model-weights_manifest.json
+│       └── tiny_face_detector_model-weights_manifest.json
+├── src/
+│   ├── App.css
+│   ├── App.test.tsx
+│   ├── App.tsx
+│   ├── index.css
+│   ├── index.tsx
+│   ├── logo.svg
+│   ├── opencv.d.ts
+│   ├── react-app-env.d.ts
+│   └── setupTests.ts
+└── dataset/
+    └── images/
+        ├── car1.jpg
+        ├── car2.jpg
+        ├── car3.jpg
+        ├── via_project_15Jul2025_12h59m_coco.json
+        └── via_project_15Jul2025_12h59m.json
+```
+
+## 4. Key Components (`src/App.tsx`)
+
+The `App.tsx` file contains the main React component (`App`) which manages the application's state, handles user interactions, and orchestrates the image processing and detection logic.
+
+### State Variables:
+*   `images`: An array of `ProcessedImage` objects, storing information about uploaded images, their processing status, and detection results.
+*   `modelsLoaded`: Boolean, indicates if OpenCV.js and face-api.js models are loaded.
+*   `error`: Stores any error messages to be displayed to the user.
+*   `enableFaceDetection`: Boolean, toggles face detection.
+*   `enablePlateDetection`: Boolean, toggles license plate detection.
+*   `blur`, `mosaic`: Booleans, enable/disable blur and mosaic effects for faces.
+*   `blurAmount`, `mosaicAmount`: Numbers, control the intensity/size of blur and mosaic effects.
+*   `plateOpacity`: Number, controls the opacity of the gray rectangle over license plates.
+*   `settingsOpen`: Boolean, controls the visibility of the settings sidebar.
+*   `previewImage`: The currently selected image for detailed view.
+*   `selectedImages`: Array of image IDs for multi-selection.
+*   `showOriginal`: Boolean, toggles between original and processed image view.
+*   `debugMode`: Boolean, enables/disables detailed console logging for detection processes.
+*   `detectionMethod`: String, controls the license plate detection strategy (`'robust'`, `'simple'`, `'aggressive'`, `'plateRecognizer'`, `'australian'`).
+*   `plateRecognizerApiKey`: String, stores the API key for Plate Recognizer.
+*   `annotations`: Array of `Annotation` objects, loaded from the VIA project file for ground truth evaluation.
+
+### Core Functions:
+
+#### `useEffect` Hooks:
+*   **Model Loading (`loadResources`):** This `useEffect` runs once on component mount. It ensures OpenCV.js is ready and loads the `ssdMobilenetv1` model for face detection from `/models`. It also attempts to load a Haar Cascade classifier for Russian plate numbers (though this is largely superseded by the advanced pipeline).
+*   **Annotation Loading (`loadAnnotations`):** This `useEffect` loads the `via_project_15Jul2025_12h59m.json` file from `/dataset/images` into the `annotations` state. This data is used for evaluating the custom Australian plate detection.
+
+#### Image Handling:
+*   `handleImageUpload(event: React.ChangeEvent<HTMLInputElement>)`: Triggered when new images are selected via the file input. It creates `ProcessedImage` objects, adds them to the `images` state, and sets the first uploaded image as `selectedImage` if none is selected.
+*   `handleDownload(image: ProcessedImage)`: Initiates the download of a processed image.
+*   `handleDelete(imageId: string)`: Removes an image from the `images` state and revokes its object URL to free up memory.
+
+#### Image Processing and Detection (`processImage` and related helpers):
+*   `processImage(imageId: string)`: The main function that orchestrates image processing.
+    *   It retrieves the image to process from the `images` state.
+    *   Marks the image as `processing`.
+    *   Creates an HTML `Image` object and a `canvas` for drawing and processing.
+    *   Performs **Face Detection** using `face-api.js`.
+    *   **Crucially, it selects the license plate detection method based on the `detectionMethod` state variable.**
+        *   `performAggressiveDetection`: A very loose detection method designed for difficult images.
+        *   `performSimpleEffectiveDetection`: A simple but highly effective OpenCV.js-based detection.
+        *   `performPlateRecognizerDetection`: Sends the image to the external Plate Recognizer API.
+        *   `performAustralianPlateDetection`: The custom-built, multi-stage OpenCV.js pipeline specifically for Australian plates.
+        *   `performRobustMultiMethodDetection`: A combination of multiple OpenCV.js methods.
+    *   Updates `detectionInfo`, `faceCount`, `plateCount`, and `detectedRegions` in the image's state.
+    *   Evaluates the detection against `groundTruthAnnotations` if `debugMode` is enabled and annotations are available.
+
+#### License Plate Detection Helper Functions (OpenCV.js based):
+These functions are the core of the custom Australian license plate detection pipeline. They all take an `HTMLImageElement` and an `HTMLCanvasElement` (for OpenCV.js operations) as input, and return an array of `PlateDetection` objects.
+
+*   `performAustralianPlateDetection(img, canvas, groundTruthAnnotations)`:
+    *   This is the entry point for the custom Australian plate detection.
+    *   It orchestrates the calls to `performGeometricAnalysis`, `performAdvancedColorAnalysis`, `performTextureAnalysis`, `performGradientAnalysis`, and `performIntelligentFusion`.
+    *   Includes a debug evaluation loop that calculates Intersection over Union (IoU) against provided `groundTruthAnnotations` to assess detection accuracy.
+*   `performGeometricAnalysis(img, canvas)`:
+    *   Analyzes the image for rectangular shapes with specific aspect ratios and sizes typical of license plates.
+    *   Uses multi-scale Canny edge detection, Gaussian blur, and morphological operations to enhance plate-like features.
+    *   Filters contours based on area, aspect ratio, and rotation angle.
+    *   Calculates `geometricMetrics` for each candidate.
+*   `performAdvancedColorAnalysis(img, canvas)`:
+    *   Identifies license plates based on their color characteristics in multiple color spaces (HSV, LAB).
+    *   Includes specific color profiles for common Australian plate colors (Green on White, Black on White, White on Black, Red on White).
+    *   Uses `cv.inRange` to create masks for specific color ranges.
+    *   Applies morphological operations to refine color regions.
+    *   Calls `validateColorConsistency` and `detectTextPresence` for further validation.
+*   `performTextureAnalysis(img, canvas)`:
+    *   Detects text-like patterns using Gabor filters at various orientations and frequencies.
+    *   Applies thresholding and contour finding to identify potential text regions.
+    *   Calls `groupTextRegions` to group individual character contours into larger text blocks.
+    *   Calls `validateTextCharacteristics` for further validation.
+*   `performGradientAnalysis(img, canvas)`:
+    *   Enhances edges using Sobel operators to compute gradients.
+    *   Applies thresholding and morphological operations to connect text components.
+    *   Calls `analyzeGradientStrength` to score regions based on gradient intensity and consistency.
+*   `performIntelligentFusion(candidates, img)`:
+    *   Takes all candidate detections from previous stages.
+    *   Groups overlapping candidates using `groupOverlappingCandidates`.
+    *   For single candidates, it performs `performFinalValidation`.
+    *   For multiple overlapping candidates, it uses `fuseMultipleCandidates` to combine them into a single, more confident detection.
+    *   Filters and sorts the final detections by confidence.
+
+#### Helper Functions for Detection Stages:
+*   `calculateIoU(box1, box2)`: Calculates the Intersection over Union between two bounding boxes. Used for evaluating detection accuracy and merging overlapping candidates.
+*   `groupOverlappingCandidates(candidates)`: Groups candidate `PlateDetection` objects that significantly overlap, suggesting they might be detections of the same license plate.
+*   `performFinalValidation(candidate, img)`: A comprehensive validation step for a single candidate, combining scores from geometric, color, text presence, and gradient analysis to produce a final confidence score.
+*   `fuseMultipleCandidates(group, img)`: Merges multiple overlapping candidate detections into a single, more accurate bounding box, typically taking the highest confidence score.
+*   `createDirectionalKernel(orientation, frequency)`: Creates a Gabor kernel for texture analysis.
+*   `groupTextRegions(contours, img)`: Filters and groups individual character contours into larger text regions based on proximity and size.
+*   `analyzeGradientStrength(grad, rect)`: Analyzes the mean and standard deviation of gradients within a region to assess text-like patterns.
+*   `checkEdgeQuality(src, rect)`: Calculates an edge density score for a given region.
+*   `checkColorUniformity(src, rect)`: Calculates a color uniformity score for a given region.
+*   `performBasicRectangleDetection(img, canvas)`: A basic fallback detection method using simple contour finding.
+*   `performContourAreaDetection(img, canvas)`: Detects plates based on contour area and aspect ratio.
+*   `performEdgeDensityDetection(img, canvas)`: Detects plates based on edge density within sliding windows.
+*   `performUltraAggressiveDetection(img, canvas)`: A very loose, grid-based detection method for difficult cases.
+
+## 5. How to Run the Project
+
+1.  **Navigate to the project root directory** in your terminal.
+    ```bash
+    cd C:\Users\ZhanboLiu\Downloads\Newcode\mosaic-blur-app
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Start the development server:**
+    Since port 3000 might be in use, you can specify a different port.
+    ```bash
+    set PORT=3001 && npm start
+    ```
+    (For Linux/macOS, use `PORT=3001 npm start`)
+4.  **Open your browser** and navigate to `http://localhost:3001` (or the port indicated in your terminal).
+
+## 6. Troubleshooting
+
+*   **"Adjacent JSX elements must be wrapped..." error:** This indicates multiple JSX elements are returned without a single parent. Ensure all sibling elements are wrapped in a `<div>`, `<span>`, or a React Fragment (`<>...</>`). I have attempted to fix this in the latest code.
+*   **"Module not found" errors related to `@mui/material`:** This usually means corrupted `node_modules`. Try:
+    ```bash
+    rd /s /q node_modules
+    del package-lock.json
+    npm cache clean --force
+    npm install
+    ```
+*   **OpenCV.js or face-api.js loading errors:**
+    *   Ensure the `public/models` directory contains all necessary model files.
+    *   Check your browser's console for more specific errors related to file fetching.
+    *   Verify network connectivity if models are fetched from a CDN (though here they are local).
+*   **"PORT is not recognized..." error:** This is a Windows-specific issue. Use `set PORT=3001 && npm start` instead of `PORT=3001 npm start`.
+*   **Low detection accuracy for Australian plates:**
+    *   Ensure `debugMode` is set to `true` in `App.tsx` to see detailed logging of detection scores and IoU with ground truth.
+    *   Experiment with different `detectionMethod` options in the settings panel.
+    *   If using "Plate Recognizer", ensure your API key is correctly entered and valid.
+    *   The OpenCV.js-based Australian detection (`performAustralianPlateDetection`) is a heuristic approach. Its performance depends heavily on the quality and diversity of the training data (your annotations) and fine-tuning of parameters within its sub-functions (`performGeometricAnalysis`, `performAdvancedColorAnalysis`, etc.). You may need to adjust thresholds and parameters within these functions based on your specific image set.
+*   **"No annotations found in the VIA project file."**: This means the VIA project file (`via_project_15Jul2025_12h59m.json`) does not contain the bounding box information. You need to draw the bounding boxes around the license plates in the VIA tool and then export the project again.
+
+This guide should provide a solid foundation for understanding and working with the project. Please let me know if you have any further questions or encounter new issues.
