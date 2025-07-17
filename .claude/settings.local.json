@@ -22,7 +22,10 @@
       "Bash(kill:*)",
       "Bash(PORT=3000 npm start)",
       "Bash(cp:*)",
-      "Bash(set PORT=3001)"
+      "Bash(set PORT=3001)",
+      "Bash(npm run start:*)",
+      "Bash(npm ls:*)",
+      "Bash(npx kill-port:*)"
     ],
     "deny": []
   }

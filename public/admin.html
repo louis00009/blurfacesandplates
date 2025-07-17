@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Access - AI Image Anonymizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1976d2;
+            text-align: center;
+        }
+        .admin-link {
+            display: block;
+            background: #1976d2;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .admin-link:hover {
+            background: #1565c0;
+        }
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .note {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Admin Panel Access</h1>
+        
+        <div class="instructions">
+            <h3>📋 访问Admin页面的方法：</h3>
+            <ol>
+                <li><strong>URL参数方式：</strong> 
+                    <a href="/?admin=true" class="admin-link">点击这里进入Admin页面</a>
+                </li>
+                <li><strong>用户菜单方式：</strong> 
+                    使用 admin@yourapp.com 账户登录后，在用户菜单中会显示"Admin Panel"选项
+                </li>
+                <li><strong>直接URL方式：</strong> 
+                    访问 <code>http://localhost:3000/?admin=true</code>
+                </li>
+            </ol>
+        </div>
+
+        <div class="note">
+            <h3>⚠️ 注意事项：</h3>
+            <ul>
+                <li>Admin功能需要登录 <code>admin@yourapp.com</code> 账户</li>
+                <li>在生产环境中，请移除或保护此页面</li>
+                <li>确保后端API端点已正确配置</li>
+                <li>Admin系统包含8个完整的管理模块</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h3>🚀 Admin系统功能：</h3>
+            <ul>
+                <li>✅ 系统配置管理</li>
+                <li>✅ 订阅计划管理</li>
+                <li>✅ 支付提供商配置</li>
+                <li>✅ 邮件模板管理</li>
+                <li>✅ 优惠券管理</li>
+                <li>✅ 用户订阅管理</li>
+                <li>✅ 支付分析统计</li>
+                <li>✅ 文档模板管理</li>
+            </ul>
+        </div>
+
+        <a href="/" style="color: #666; text-decoration: none;">← 返回主应用</a>
+    </div>
+</body>
+</html>

@@ -1,19 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Box, Grid, Alert, Typography } from '@mui/material';
+import { Box, Alert, Stack } from '@mui/material';
 import * as faceapi from 'face-api.js';
 
 // Import our new components and types
 import { ProcessedImage, ProcessingSettings, Annotation, AppState } from './types';
-import ImagePreview from './components/ui/ImagePreview';
-import ImageGallery from './components/ui/ImageGallery';
-import SettingsPanel from './components/ui/SettingsPanel';
+import NavigationBar from './components/ui/NavigationBar';
+import LeftSidebarGallery from './components/ui/LeftSidebarGallery';
+import CentralPreview from './components/ui/CentralPreview';
+import RightControlPanel from './components/ui/RightControlPanel';
 import APIManagerPage from './components/admin/APIManagerPage';
+import AdminDashboard from './components/admin/AdminDashboard';
+import LoginPage from './components/auth/LoginPage';
+import RegisterPage from './components/auth/RegisterPage';
+import ProfilePage from './components/auth/ProfilePage';
+import SubscriptionManager from './components/subscription/SubscriptionManager';
+import { AuthProvider } from './contexts/AuthContext';
 import { useImageProcessor } from './components/detection/ImageProcessor';
 import { initializeOCR } from './utils';
 
 declare var cv: any;
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   // Main app state
   const [state, setState] = useState<AppState>({
     images: [],
@@ -48,6 +55,15 @@ const App: React.FC = () => {
   // API Manager page state
   const [showAPIManager, setShowAPIManager] = useState(false);
 
+  // Admin page state
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  // Auth modal states
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showSubscription, setShowSubscription] = useState(false);
+
   // Listen for API Manager open event
   useEffect(() => {
     const handleOpenAPIManager = () => {
@@ -58,6 +74,15 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('openAPIManager', handleOpenAPIManager);
     };
+  }, []);
+
+  // Check URL for admin access
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const adminParam = window.location.pathname === '/admin' || urlParams.get('admin') === 'true';
+    if (adminParam) {
+      setShowAdmin(true);
+    }
   }, []);
 
   // Initialize face detection models
@@ -148,33 +173,43 @@ const App: React.FC = () => {
   // File upload handler
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      const fileList = Array.from(event.target.files);
-      const newImages: ProcessedImage[] = fileList.map(file => ({
-        id: `${Date.now()}-${Math.random()}`,
-        originalUrl: URL.createObjectURL(file),
-        processedDataUrl: null,
-        fileName: file.name,
-        processing: false,
-        detectionInfo: '',
-        faceCount: 0,
-        plateCount: 0,
-        detectedRegions: []
-      }));
-
-      setState(prev => ({
-        ...prev,
-        images: [...prev.images, ...newImages],
-        error: null
-      }));
-      
-      // Auto-select first image if none selected
-      if (!state.selectedImage && newImages.length > 0) {
-        setState(prev => ({ ...prev, selectedImage: newImages[0] }));
-      }
+      handleFiles(event.target.files);
     }
     
     // Reset input
     event.target.value = '';
+  };
+
+  // File drop handler
+  const handleFileDrop = (files: FileList) => {
+    handleFiles(files);
+  };
+
+  // Common file handling logic
+  const handleFiles = (files: FileList) => {
+    const fileList = Array.from(files).filter(file => file.type.startsWith('image/'));
+    const newImages: ProcessedImage[] = fileList.map(file => ({
+      id: `${Date.now()}-${Math.random()}`,
+      originalUrl: URL.createObjectURL(file),
+      processedDataUrl: null,
+      fileName: file.name,
+      processing: false,
+      detectionInfo: '',
+      faceCount: 0,
+      plateCount: 0,
+      detectedRegions: []
+    }));
+
+    setState(prev => ({
+      ...prev,
+      images: [...prev.images, ...newImages],
+      error: null
+    }));
+    
+    // Auto-select first image if none selected
+    if (!state.selectedImage && newImages.length > 0) {
+      setState(prev => ({ ...prev, selectedImage: newImages[0] }));
+    }
   };
 
   // Image selection handlers
@@ -186,8 +221,7 @@ const App: React.FC = () => {
     }
   };
 
-  const toggleImageSelection = (imgId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
+  const toggleImageSelection = (imgId: string) => {
     setState(prev => ({
       ...prev,
       selectedImages: prev.selectedImages.includes(imgId)
@@ -274,6 +308,25 @@ const App: React.FC = () => {
     });
   };
 
+  const handleRemoveAllImages = () => {
+    setState(prev => {
+      // Clean up all object URLs
+      prev.images.forEach(img => {
+        URL.revokeObjectURL(img.originalUrl);
+        if (img.processedDataUrl) {
+          URL.revokeObjectURL(img.processedDataUrl);
+        }
+      });
+      
+      return {
+        ...prev,
+        images: [],
+        selectedImages: [],
+        selectedImage: null
+      };
+    });
+  };
+
   const handleSingleImageProcess = async (imgId: string) => {
     const image = state.images.find(img => img.id === imgId);
     if (image) {
@@ -285,71 +338,149 @@ const App: React.FC = () => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   };
 
+  // Navigation handlers
+  const handleLoginClick = () => {
+    setShowLogin(true);
+  };
+
+  const handleRegisterClick = () => {
+    setShowRegister(true);
+  };
+
+  const handleProfileClick = () => {
+    setShowProfile(true);
+  };
+
+  const handleUpgradeClick = () => {
+    setShowSubscription(true);
+  };
+
+  const handleMenuItemClick = (item: string) => {
+    console.log('Menu item clicked:', item);
+    // Handle different menu items as needed
+    if (item === 'upgrade') {
+      setShowSubscription(true);
+    }
+  };
+
   // Show API Manager page if requested
   if (showAPIManager) {
     return <APIManagerPage onClose={() => setShowAPIManager(false)} />;
   }
 
-  return (
-    <Container maxWidth="lg" style={{ padding: '20px' }}>
-      <Box sx={{ my: 4, textAlign: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          AI-Powered Image Anonymizer
-        </Typography>
-        <Typography variant="subtitle1" gutterBottom>
-          Blur or mosaic faces and license plates in your images with advanced detection.
-        </Typography>
-      </Box>
+  // Show Admin Dashboard if requested
+  if (showAdmin) {
+    return <AdminDashboard onClose={() => {
+      setShowAdmin(false);
+      // Clear admin from URL
+      window.history.pushState({}, '', window.location.pathname);
+    }} />;
+  }
 
+  return (
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Navigation Bar */}
+      <NavigationBar
+        onLoginClick={handleLoginClick}
+        onRegisterClick={handleRegisterClick}
+        onProfileClick={handleProfileClick}
+        onUpgradeClick={handleUpgradeClick}
+        onMenuItemClick={handleMenuItemClick}
+        onAdminClick={() => setShowAdmin(true)}
+      />
+
+      {/* Error and Loading States */}
       {state.error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mx: 2, mb: 1 }}>
           {state.error}
         </Alert>
       )}
 
       {!state.modelsLoaded && (
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert severity="info" sx={{ mx: 2, mb: 1 }}>
           Loading AI models... Please wait.
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        {/* Settings Panel */}
-        <Grid item xs={12} md={4}>
-          <SettingsPanel
-            settings={settings}
-            onSettingsChange={updateSettings}
-            selectedImagesCount={state.selectedImages.length}
-            onProcessSelectedImages={processSelectedImages}
-            onSelectAllImages={selectAllImages}
-            onClearSelection={clearSelection}
-            onFileUpload={handleImageUpload}
-            isProcessing={state.images.some(img => state.selectedImages.includes(img.id) && img.processing)}
-            imagesCount={state.images.length}
-          />
-        </Grid>
+      {/* Main Content Area */}
+      <Box sx={{ flex: 1, display: 'flex', p: 2, gap: 2, overflow: 'hidden' }}>
+        {/* Left Sidebar - Image Gallery */}
+        <LeftSidebarGallery
+          images={state.images}
+          selectedImage={state.selectedImage}
+          selectedImages={state.selectedImages}
+          onImageSelect={handleImageSelect}
+          onImageToggleSelect={toggleImageSelection}
+          onImageDelete={handleDelete}
+          onFileUpload={handleImageUpload}
+          onClearSelection={clearSelection}
+          onRemoveAllImages={handleRemoveAllImages}
+        />
 
-        {/* Image Preview */}
-        <Grid item xs={12} md={8}>
-          <ImagePreview
-            selectedImage={state.selectedImage}
-            showOriginal={state.showOriginal}
-            onToggleOriginal={() => setState(prev => ({ ...prev, showOriginal: !prev.showOriginal }))}
-          />
-        </Grid>
-      </Grid>
+        {/* Center - Preview Area */}
+        <CentralPreview
+          selectedImage={state.selectedImage}
+          showOriginal={state.showOriginal}
+          onToggleOriginal={() => setState(prev => ({ ...prev, showOriginal: !prev.showOriginal }))}
+          onFileUpload={handleImageUpload}
+          onFileDrop={handleFileDrop}
+          images={state.images}
+        />
 
-      {/* Image Gallery */}
-      <ImageGallery
-        images={state.images}
-        selectedImage={state.selectedImage}
-        selectedImages={state.selectedImages}
-        onImageSelect={handleImageSelect}
-        onImageToggleSelect={toggleImageSelection}
-        onImageProcess={handleSingleImageProcess}
-        onImageDelete={handleDelete}
-      />
-    </Container>
+        {/* Right Sidebar - Control Panel */}
+        <RightControlPanel
+          settings={settings}
+          onSettingsChange={updateSettings}
+          selectedImagesCount={state.selectedImages.length}
+          onProcessSelectedImages={processSelectedImages}
+          onSelectAllImages={selectAllImages}
+          onClearSelection={clearSelection}
+          isProcessing={state.images.some(img => state.selectedImages.includes(img.id) && img.processing)}
+          imagesCount={state.images.length}
+        />
+      </Box>
+
+      {/* Authentication Modals */}
+      {showLogin && (
+        <LoginPage
+          onClose={() => setShowLogin(false)}
+          onSwitchToRegister={() => {
+            setShowLogin(false);
+            setShowRegister(true);
+          }}
+        />
+      )}
+
+      {showRegister && (
+        <RegisterPage
+          onClose={() => setShowRegister(false)}
+          onSwitchToLogin={() => {
+            setShowRegister(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
+
+      {showProfile && (
+        <ProfilePage
+          onClose={() => setShowProfile(false)}
+        />
+      )}
+
+      {showSubscription && (
+        <SubscriptionManager
+          onClose={() => setShowSubscription(false)}
+        />
+      )}
+    </Box>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
